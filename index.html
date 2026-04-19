@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расчет объема насоса</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #2196F3, #00BFA5);
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #333;
+            --text-secondary: #777;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e4e8;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #2196F3;
+        }
+
+        .unit {
+            position: absolute;
+            right: 15px;
+            color: #999;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: var(--primary-gradient);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            margin-top: 10px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f0faff;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px dashed #bbdefb;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: #5c6bc0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #1a237e;
+            margin: 5px 0;
+        }
+
+        .formula-note {
+            font-size: 0.75rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-card">
+    <h2>Калькулятор насоса</h2>
+
+    <div class="input-group">
+        <label>Добыча за 24ч (непрерывно)</label>
+        <div class="input-wrapper">
+            <input type="number" id="v24" value="100">
+            <span class="unit">м³</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>Время работы (в цикле)</label>
+        <div class="input-wrapper">
+            <input type="number" id="tWork" value="1440">
+            <span class="unit">мин</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>Время простоя (в цикле)</label>
+        <div class="input-wrapper">
+            <input type="number" id="tRest" value="1440">
+            <span class="unit">мин</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>Период расчета</label>
+        <div class="input-wrapper">
+            <input type="number" id="tCalc" value="24">
+            <span class="unit">часов</span>
+        </div>
+    </div>
+
+    <button onclick="calculate()">Рассчитать</button>
+
+    <div class="result-container">
+        <div class="result-label" id="resultLabel">Итого за 24 часа</div>
+        <div class="result-value" id="resultValue">0.0</div>
+        <div style="color: #1a237e; font-weight: bold;">м³</div>
+    </div>
+
+    <div class="formula-note">
+        Используется циклическая модель:<br>
+        V = T_act × (V24 / 1440)
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        // Получаем значения
+        const v24 = parseFloat(document.getElementById('v24').value) || 0;
+        const tWork = parseFloat(document.getElementById('tWork').value) || 0;
+        const tRest = parseFloat(document.getElementById('tRest').value) || 0;
+        const tCalcHours = parseFloat(document.getElementById('tCalc').value) || 0;
+
+        // Логика расчета по формулам
+        const tTotal = tCalcHours * 60;
+        const ratePerMin = v24 / 1440;
+        const cycleTime = tWork + tRest;
+
+        let actualWorkTime = 0;
+
+        if (cycleTime > 0) {
+            const fullCycles = Math.floor(tTotal / cycleTime);
+            const remainderTime = tTotal % cycleTime;
+            const remainderWorkTime = Math.min(remainderTime, tWork);
+            actualWorkTime = (fullCycles * tWork) + remainderWorkTime;
+        } else {
+            // Если простой и работа = 0, считаем как непрерывную работу
+            actualWorkTime = tTotal;
+        }
+
+        const finalVolume = actualWorkTime * ratePerMin;
+
+        // Вывод результата
+        document.getElementById('resultValue').innerText = finalVolume.toLocaleString('ru-RU', {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 2
+        });
+        
+        document.getElementById('resultLabel').innerText = `Итого за ${tCalcHours} ч.`;
+    }
+
+    // Запускаем расчет при загрузке
+    window.onload = calculate;
+</script>
+
+</body>
+</html>
